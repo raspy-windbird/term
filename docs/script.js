@@ -9,7 +9,7 @@ const testEchoButton = document.getElementById('testEchoButton');
 const term = new Terminal({
     rows: 24,
     cols: 80,
-    cursorBlink: true,
+    cursorBlink: false,
     cursorStyle: 'block',
     convertEol: true
 });
