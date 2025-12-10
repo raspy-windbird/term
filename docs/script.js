@@ -79,11 +79,17 @@ function handleCommand(input) {
             return;
 
         case "ls":
-            const allCmds = [...Object.keys(commands.commands), "clear", "history"];
-            // 1つの文字列にまとめて term.write で出力
-            term.write("Commands:\r\n" + allCmds.map(c => " " + c).join("\r\n") + "\r\n");
-            showPrompt();  // ここで $ を出す
+            // まとめて文字列で出力
+            let allCmds = [...Object.keys(commands.commands), "clear", "history"];
+            let output = "Commands:\r\n" + allCmds.map(c => " " + c).join("\r\n") + "\r\n";
+
+            // read() を呼ばずに term.write で出力
+            term.write(output);
+
+            // $ プロンプトは showPrompt() で1回だけ
+            showPrompt();
             return;
+
     }
 
     // YAMLコマンド
