@@ -69,7 +69,6 @@ function handleCommand(input) {
     switch (input) {
         case "clear":
             term.reset();
-            showPrompt();
             return;
 
         case "history":
