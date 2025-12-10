@@ -1,10 +1,10 @@
 commands:
     help:
         description: "Show all commands"
-    output:
-        - text: "Available commands:"
-        - text: " - help"
-        - text: " - about"
+        output:
+            - text: "Available commands:"
+            - text: " - help"
+            - text: " - about"
     about:
         description: "About me"
         output:
