@@ -14,10 +14,7 @@ const term = new Terminal({
     convertEol: true
 });
 
-// Local Echo コントローラーのインスタンス生成 (xterm.js >=v4 形式)
-// LocalEchoController はグローバル変数として利用可能
-const localEcho = new LocalEchoController();
-term.loadAddon(localEcho);
+const localEcho = new LocalEchoController(term); 
 
 // ターミナルを開く
 term.open(terminalContainer);
