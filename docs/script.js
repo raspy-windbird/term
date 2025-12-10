@@ -82,7 +82,10 @@ function handleCommand(input) {
     }
 
     if (input === "clear") {
-        term.reset();
+        term.clear()
+        term.write("\x1b[H");
+        localEcho.println("Welcome to my terminal! Type 'help'");
+        prompt();
         return;
     }
 
