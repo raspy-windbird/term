@@ -16,11 +16,7 @@ function initTerminal() {
     });
     const localEcho = new LocalEchoController(term);
 
-    // HTML側の #terminal に描画
     term.open(document.getElementById("terminal"));
-
-    // ローカルエコーをターミナルに登録
-    term.loadAddon(localEcho);
 
     localEcho.println("Welcome to my terminal! Type 'help'");
 
@@ -34,7 +30,6 @@ function initTerminal() {
     }
 }
 
-// 入力されたコマンドを処理
 function handleCommand(localEcho, input) {
     if (!input) return;
 
