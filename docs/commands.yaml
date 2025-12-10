@@ -1,0 +1,12 @@
+commands:
+    help:
+        description: "Show all commands"
+    output:
+        - text: "Available commands:"
+        - text: " - help"
+        - text: " - about"
+    about:
+        description: "About me"
+        output:
+        - text: "Kamesora — creator"
+        - text: "Loves terminals and coding"
