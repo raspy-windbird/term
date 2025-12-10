@@ -79,11 +79,20 @@ function handleCommand(input) {
             return;
 
         case "ls":
-            // 画面上は縦に表示。$重複なし
-            const allCmds = [...Object.keys(commands.commands), "clear", "history"];
-            localEcho._print("Commands:\r\n" + allCmds.map(c => " " + c).join("\r\n") + "\r\n");
+            localEcho.println("Commands:");
+
+            // YAMLコマンド縦並び
+            Object.keys(commands.commands).forEach(cmd => localEcho.println(" " + cmd));
+
+            // 内部コマンド縦並び
+            ["clear", "history"].forEach(cmd => localEcho.println(" " + cmd));
+
+            // 改行だけ追加（$ は showPrompt() で出る）
+            term.write("\r\n");
+
             showPrompt();
             return;
+
     }
 
     // YAMLコマンド
