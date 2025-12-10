@@ -1,4 +1,4 @@
-import { LocalEchoAddon } from "https://cdn.jsdelivr.net/npm/@gytx/xterm-local-echo@0.1.8/dist/index.modern.min.js";
+import { LocalEchoAddon } from ./local-echo.js
 
 // DOM
 const connectButton = document.getElementById('connectButton');
