@@ -81,7 +81,10 @@ function handleCommand(input) {
         case "ls":
             localEcho.println("Commands:");
             Object.keys(commands.commands).forEach(cmd => localEcho.println(" " + cmd));
-            localEcho.println(" clear  history");
+
+            // 内部コマンドも縦に
+            ["clear", "history"].forEach(cmd => localEcho.println(" " + cmd));
+
             showPrompt();
             return;
     }
