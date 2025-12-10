@@ -17,6 +17,7 @@ function initTerminal() {
     term = new Terminal({
         cursorBlink: true,
     });
+    
     localEcho = new LocalEchoController(term);
 
     term.open(document.getElementById("terminal"));
@@ -41,25 +42,46 @@ function showPrompt() {
 function handleCommand(input) {
     if (!input) return;
 
-    // 履歴保存
+    localEcho._history = localEcho._history || [];
     localEcho._history.push(input);
 
-    // Built-in (localEcho.addCommand で登録したもの)
-    if (localEcho._commands && localEcho._commands[input]) {
-        return localEcho._commands[input]();
+    // built-in commands
+    switch (input) {
+        case "clear":
+            term.reset();
+            showPrompt();
+            return;
+        case "history":
+            (localEcho._history || []).forEach((h, i) =>
+                localEcho.println(`${i + 1}: ${h}`)
+            );
+            showPrompt();
+            return;
+        case "ls":
+            localEcho.println("Commands:");
+            Object.keys(commands.commands).forEach(cmd => localEcho.println(" " + cmd));
+            localEcho.println(" help  clear  history");
+            showPrompt();
+            return;
+        case "help":
+            localEcho.println("Available commands:");
+            Object.keys(commands.commands).forEach(cmd =>
+                localEcho.println(` - ${cmd}`)
+            );
+            localEcho.println(" help  clear  history");
+            showPrompt();
+            return;
     }
 
-    // YAML側
+    // YAMLコマンド
     const cmd = commands.commands[input];
     if (!cmd) {
         localEcho.println(`Command not found: ${input}`);
         return;
     }
-
-    (cmd.output || []).forEach(item => {
-        localEcho.println(item.text);
-    });
+    (cmd.output || []).forEach(item => localEcho.println(item.text));
 }
+
 
 function registerBuiltinCommands() {
 
