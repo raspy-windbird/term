@@ -1,11 +1,9 @@
-import * as yaml from "https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js";
-
 let commands = {};
 
 fetch("commands.yaml")
     .then(res => res.text())
     .then(text => {
-        commands = yaml.load(text);
+        commands = jsyaml.load(text);
         initTerminal();
     })
     .catch(err => {
