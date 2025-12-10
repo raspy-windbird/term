@@ -86,8 +86,6 @@ function handleCommand(input) {
             // read() を呼ばずに term.write で出力
             term.write(output);
 
-            // $ プロンプトは showPrompt() で1回だけ
-            showPrompt();
             return;
 
     }
