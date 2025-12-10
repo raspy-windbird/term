@@ -2,7 +2,7 @@ import * as yaml from "https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.m
 
 let commands = {};
 
-fetch("/commands.yml")
+fetch("/commands.yaml")
     .then(res => res.text())
     .then(text => {
         commands = yaml.load(text);
