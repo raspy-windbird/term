@@ -23,6 +23,36 @@ function initTerminal() {
 
     localEcho.println("Welcome to my terminal! Type 'help'");
 
+    let historyIndex = -1;
+
+    term.onKey(e => {
+        const ev = e.domEvent;
+
+        if (ev.key === "ArrowUp") {
+            if (localEcho._history && localEcho._history.length > 0) {
+                if (historyIndex === -1)
+                    historyIndex = localEcho._history.length - 1;
+                else if (historyIndex > 0)
+                    historyIndex--;
+                localEcho.setInput(localEcho._history[historyIndex]);
+            }
+            ev.preventDefault();
+        }
+
+        if (ev.key === "ArrowDown") {
+            if (localEcho._history && localEcho._history.length > 0) {
+                if (historyIndex < localEcho._history.length - 1) {
+                    historyIndex++;
+                    localEcho.setInput(localEcho._history[historyIndex]);
+                } else {
+                    historyIndex = -1;
+                    localEcho.setInput("");
+                }
+            }
+            ev.preventDefault();
+        }
+    });
+
     prompt();
 }
 
@@ -34,7 +64,10 @@ function prompt() {
 }
 
 function handleCommand(localEcho, input) {
-    if (!input) return;
+    if (input) {
+        localEcho._history = localEcho._history || [];
+        localEcho._history.push(input);
+    } else { return; }
 
     const cmd = commands.commands[input];
     if (!cmd) {
