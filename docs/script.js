@@ -2,8 +2,6 @@
 const term = new Terminal();
 term.open(document.getElementById('terminal'));
 
-// Create a local echo controller (xterm.js v3)
-const localEcho = new LocalEchoController(term);
 // Create a local echo controller (xterm.js >=v4)
 const localEcho = new LocalEchoController();
 term.loadAddon(localEcho);
