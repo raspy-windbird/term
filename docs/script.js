@@ -15,8 +15,11 @@ fetch("commands.yaml")
 
 function initTerminal() {
     term = new Terminal({
-        cursorBlink: true,
+            cursorBlink: true,
+            fontSize: 16,
+            lineHeight: 1.4,
     });
+
     localEcho = new LocalEchoController(term);
 
     term.open(document.getElementById("terminal"));
