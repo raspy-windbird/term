@@ -2,6 +2,7 @@ let commands = {};
 let term;
 let localEcho;
 
+// YAML読み込み
 fetch("commands.yaml")
     .then(res => res.text())
     .then(text => {
@@ -17,105 +18,92 @@ function initTerminal() {
         cursorBlink: true,
     });
     localEcho = new LocalEchoController(term);
+
     term.open(document.getElementById("terminal"));
 
+    // 履歴 ON（historyEnable は v3 には存在しないので、自前で管理）
+    localEcho._history = [];
+
+    // 📌 コマンドをここで登録する
+    registerBuiltinCommands();
+
     localEcho.println("Welcome to my terminal! Type 'help'");
-
-    prompt();
-
-    let historyIndex = -1;
-
-    term.onKey(e => {
-        const ev = e.domEvent;
-
-        if (ev.key === "ArrowUp") {
-            if (localEcho._history && localEcho._history.length > 0) {
-                if (historyIndex === -1)
-                    historyIndex = localEcho._history.length - 1;
-                else if (historyIndex > 0)
-                    historyIndex--;
-                localEcho.setInput(localEcho._history[historyIndex]);
-            }
-            ev.preventDefault();
-        }
-
-        if (ev.key === "ArrowDown") {
-            if (localEcho._history && localEcho._history.length > 0) {
-                if (historyIndex < localEcho._history.length - 1) {
-                    historyIndex++;
-                    localEcho.setInput(localEcho._history[historyIndex]);
-                } else {
-                    historyIndex = -1;
-                    localEcho.setInput("");
-                }
-            }
-            ev.preventDefault();
-        }
-    });
+    showPrompt();
 }
 
-function prompt() {
+function showPrompt() {
     localEcho.read("~$ ")
         .then(input => handleCommand(input.trim()))
-        .then(prompt)
-        .catch(() => prompt());
+        .then(showPrompt)
+        .catch(showPrompt);
 }
 
 function handleCommand(input) {
-    if (input) {
-        localEcho._history = localEcho._history || [];
-        localEcho._history.push(input);
-    } else return;
+    if (!input) return;
 
-    // === 内部コマンド ===
-    if (input === "help") {
-        localEcho.println("Available commands:");
+    // 履歴保存
+    localEcho._history.push(input);
 
-        Object.keys(commands.commands).forEach(cmd => {
-            const desc = commands.commands[cmd].desc || "";
-            localEcho.println(` - ${cmd} ${desc ? "— " + desc : ""}`);
-        });
-        localEcho.println(" - clear — Clear the screen");
-        localEcho.println(" - history — Show command history");
-        localEcho.println(" - ls — List commands");
-        return;
+    // Built-in (localEcho.addCommand で登録したもの)
+    if (localEcho._commands && localEcho._commands[input]) {
+        return localEcho._commands[input]();
     }
 
-    if (input === "clear") {
-        term.clear()
-        term.write("\x1b[H");
-        localEcho.println("Welcome to my terminal! Type 'help'");
-        prompt();
-        return;
-    }
-
-    if (input === "history") {
-        localEcho.println("History:");
-        if (!localEcho._history || localEcho._history.length === 0) {
-            localEcho.println(" (empty)");
-        } else {
-            localEcho._history.forEach(h => localEcho.println(" " + h));
-        }
-        return;
-    }
-
-    if (input === "ls") {
-        localEcho.println("Commands:");
-        Object.keys(commands.commands).forEach(cmd => {
-            localEcho.println(" " + cmd);
-        });
-        localEcho.println(" help  clear  history");
-        return;
-    }
-
-    // === YAMLコマンド ===
+    // YAML側
     const cmd = commands.commands[input];
     if (!cmd) {
         localEcho.println(`Command not found: ${input}`);
         return;
     }
 
-    cmd.output.forEach(item => {
+    (cmd.output || []).forEach(item => {
         localEcho.println(item.text);
+    });
+}
+
+function registerBuiltinCommands() {
+
+    // === ls ===
+    localEcho.addCommand("ls", async () => {
+        term.write("\r\nCommands:\r\n");
+
+        // localEchoに登録されたコマンド＋YAML側のコマンドを結合
+        const builtin = Object.keys(localEcho._commands);
+        const yamlCmds = Object.keys(commands.commands);
+        const all = [...new Set([...builtin, ...yamlCmds])].sort();
+
+        all.forEach(cmd => {
+            term.write(` ${cmd}\r\n`);
+        });
+
+        showPrompt();
+    });
+
+    // === clear ===
+    localEcho.addCommand("clear", async () => {
+        term.clear();
+        showPrompt();
+    });
+
+    // === history ===
+    localEcho.addCommand("history", async () => {
+        const hist = localEcho._history || [];
+        hist.forEach((h, i) => term.write(`${i + 1}: ${h}\r\n`));
+        showPrompt();
+    });
+
+    // === help（自動生成）===
+    localEcho.addCommand("help", async () => {
+        term.write("\r\nAvailable commands:\r\n");
+
+        const builtin = Object.keys(localEcho._commands);
+        const yamlCmds = Object.keys(commands.commands);
+        const all = [...new Set([...builtin, ...yamlCmds])].sort();
+
+        all.forEach(cmd => {
+            term.write(` - ${cmd}\r\n`);
+        });
+
+        showPrompt();
     });
 }
