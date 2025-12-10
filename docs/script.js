@@ -1,5 +1,3 @@
-import LocalEchoAddon from "./local-echo.js"
-
 // DOM
 const connectButton = document.getElementById('connectButton');
 const terminalContainer = document.getElementById('terminal');
