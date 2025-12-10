@@ -19,6 +19,7 @@ function initTerminal() {
     localEcho = new LocalEchoController(term);
 
     term.open(document.getElementById("terminal"));
+    localEcho.historyEnable(true);
 
     localEcho.println("Welcome to my terminal! Type 'help'");
 
