@@ -1,4 +1,4 @@
-import { LocalEchoAddon } from "./local-echo.js"
+import LocalEchoAddon from "./local-echo.js"
 
 // DOM
 const connectButton = document.getElementById('connectButton');
