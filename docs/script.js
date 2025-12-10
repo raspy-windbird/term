@@ -24,7 +24,7 @@ function initTerminal() {
     // 履歴管理
     localEcho._history = [];
 
-    localEcho.println("Welcome to my terminal! Type 'help'");
+    localEcho.println("Welcome to my terminal! Type 'ls' to see commands");
     showPrompt();
 
     // 履歴対応 ↑↓
@@ -81,14 +81,7 @@ function handleCommand(input) {
         case "ls":
             localEcho.println("Commands:");
             Object.keys(commands.commands).forEach(cmd => localEcho.println(" " + cmd));
-            localEcho.println(" help  clear  history");
-            showPrompt();
-            return;
-
-        case "help":
-            localEcho.println("Available commands:");
-            Object.keys(commands.commands).forEach(cmd => localEcho.println(` - ${cmd}`));
-            localEcho.println(" help  clear  history");
+            localEcho.println(" clear  history");
             showPrompt();
             return;
     }
