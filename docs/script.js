@@ -1,4 +1,6 @@
 let commands = {};
+let term;          // ←ここで宣言
+let localEcho;     // ←これも外に出すと便利
 
 fetch("commands.yaml")
     .then(res => res.text())
@@ -11,23 +13,23 @@ fetch("commands.yaml")
     });
 
 function initTerminal() {
-    const term = new Terminal({
+    term = new Terminal({
         cursorBlink: true,
     });
-    const localEcho = new LocalEchoController(term);
+    localEcho = new LocalEchoController(term);
 
     term.open(document.getElementById("terminal"));
 
     localEcho.println("Welcome to my terminal! Type 'help'");
 
     prompt();
+}
 
-    function prompt() {
-        localEcho.read("~$ ")
-            .then(input => handleCommand(localEcho, input.trim()))
-            .then(prompt)
-            .catch(() => prompt());
-    }
+function prompt() {
+    localEcho.read("~$ ")
+        .then(input => handleCommand(localEcho, input.trim()))
+        .then(prompt)
+        .catch(() => prompt());
 }
 
 function handleCommand(localEcho, input) {
