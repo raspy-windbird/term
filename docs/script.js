@@ -17,19 +17,40 @@ function initTerminal() {
     term = new Terminal({
         cursorBlink: true,
     });
-    
     localEcho = new LocalEchoController(term);
 
     term.open(document.getElementById("terminal"));
 
-    // 履歴 ON（historyEnable は v3 には存在しないので、自前で管理）
+    // 履歴管理
     localEcho._history = [];
-
-    // 📌 コマンドをここで登録する
-    registerBuiltinCommands();
 
     localEcho.println("Welcome to my terminal! Type 'help'");
     showPrompt();
+
+    // 履歴対応 ↑↓
+    let historyIndex = -1;
+    term.onKey(e => {
+        const ev = e.domEvent;
+
+        if (ev.key === "ArrowUp") {
+            if (localEcho._history.length > 0) {
+                if (historyIndex === -1) historyIndex = localEcho._history.length - 1;
+                else if (historyIndex > 0) historyIndex--;
+                localEcho.setInput(localEcho._history[historyIndex]);
+            }
+            ev.preventDefault();
+        }
+
+        if (ev.key === "ArrowDown") {
+            if (localEcho._history.length > 0) {
+                if (historyIndex < localEcho._history.length - 1) historyIndex++;
+                else historyIndex = -1;
+
+                localEcho.setInput(historyIndex === -1 ? "" : localEcho._history[historyIndex]);
+            }
+            ev.preventDefault();
+        }
+    });
 }
 
 function showPrompt() {
@@ -42,7 +63,6 @@ function showPrompt() {
 function handleCommand(input) {
     if (!input) return;
 
-    localEcho._history = localEcho._history || [];
     localEcho._history.push(input);
 
     // built-in commands
@@ -51,23 +71,23 @@ function handleCommand(input) {
             term.reset();
             showPrompt();
             return;
+
         case "history":
-            (localEcho._history || []).forEach((h, i) =>
-                localEcho.println(`${i + 1}: ${h}`)
-            );
+            localEcho.println("History:");
+            localEcho._history.forEach((h, i) => localEcho.println(` ${i + 1}: ${h}`));
             showPrompt();
             return;
+
         case "ls":
             localEcho.println("Commands:");
             Object.keys(commands.commands).forEach(cmd => localEcho.println(" " + cmd));
             localEcho.println(" help  clear  history");
             showPrompt();
             return;
+
         case "help":
             localEcho.println("Available commands:");
-            Object.keys(commands.commands).forEach(cmd =>
-                localEcho.println(` - ${cmd}`)
-            );
+            Object.keys(commands.commands).forEach(cmd => localEcho.println(` - ${cmd}`));
             localEcho.println(" help  clear  history");
             showPrompt();
             return;
@@ -79,53 +99,6 @@ function handleCommand(input) {
         localEcho.println(`Command not found: ${input}`);
         return;
     }
+
     (cmd.output || []).forEach(item => localEcho.println(item.text));
-}
-
-
-function registerBuiltinCommands() {
-
-    // === ls ===
-    localEcho.addCommand("ls", async () => {
-        term.write("\r\nCommands:\r\n");
-
-        // localEchoに登録されたコマンド＋YAML側のコマンドを結合
-        const builtin = Object.keys(localEcho._commands);
-        const yamlCmds = Object.keys(commands.commands);
-        const all = [...new Set([...builtin, ...yamlCmds])].sort();
-
-        all.forEach(cmd => {
-            term.write(` ${cmd}\r\n`);
-        });
-
-        showPrompt();
-    });
-
-    // === clear ===
-    localEcho.addCommand("clear", async () => {
-        term.clear();
-        showPrompt();
-    });
-
-    // === history ===
-    localEcho.addCommand("history", async () => {
-        const hist = localEcho._history || [];
-        hist.forEach((h, i) => term.write(`${i + 1}: ${h}\r\n`));
-        showPrompt();
-    });
-
-    // === help（自動生成）===
-    localEcho.addCommand("help", async () => {
-        term.write("\r\nAvailable commands:\r\n");
-
-        const builtin = Object.keys(localEcho._commands);
-        const yamlCmds = Object.keys(commands.commands);
-        const all = [...new Set([...builtin, ...yamlCmds])].sort();
-
-        all.forEach(cmd => {
-            term.write(` - ${cmd}\r\n`);
-        });
-
-        showPrompt();
-    });
 }
