@@ -79,14 +79,14 @@ function handleCommand(input) {
             return;
 
         case "ls":
-            localEcho.println("Commands:");
-            Object.keys(commands.commands).forEach(cmd => localEcho.println(" " + cmd));
+            // 画面上は縦に表示する
+            let allCmds = [...Object.keys(commands.commands), "clear", "history"];
+            localEcho._print(allCmds.map(c => " " + c).join("\r\n") + "\r\n");
 
-            // 内部コマンドも縦に
-            ["clear", "history"].forEach(cmd => localEcho.println(" " + cmd));
-
+            // ここで showPrompt() 呼ぶと $ は1つだけ
             showPrompt();
             return;
+
     }
 
     // YAMLコマンド
