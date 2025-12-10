@@ -16,7 +16,6 @@ fetch("commands.yaml")
 function initTerminal() {
     term = new Terminal({
             cursorBlink: true,
-            fontSize: 16,
             lineHeight: 1.4,
     });
 
