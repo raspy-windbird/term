@@ -18,10 +18,8 @@ button {
 #terminal {
     width: 100%;
     height: 400px;
-    padding: 10px;
-    /* 枠と文字の距離 */
+    padding: 12px 10px;
     box-sizing: border-box;
-    /* paddingを含めたサイズにする */
     border: 1px solid #ccc;
     background-color: #000;
 }
