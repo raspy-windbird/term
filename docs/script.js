@@ -1,6 +1,6 @@
 let commands = {};
-let term;          // ←ここで宣言
-let localEcho;     // ←これも外に出すと便利
+let term;
+let localEcho;
 
 fetch("commands.yaml")
     .then(res => res.text())
@@ -17,10 +17,11 @@ function initTerminal() {
         cursorBlink: true,
     });
     localEcho = new LocalEchoController(term);
-
     term.open(document.getElementById("terminal"));
 
     localEcho.println("Welcome to my terminal! Type 'help'");
+
+    prompt();
 
     let historyIndex = -1;
 
@@ -51,23 +52,22 @@ function initTerminal() {
             ev.preventDefault();
         }
     });
-
-    prompt();
 }
 
 function prompt() {
     localEcho.read("~$ ")
-        .then(input => handleCommand(localEcho, input.trim()))
+        .then(input => handleCommand(input.trim()))
         .then(prompt)
         .catch(() => prompt());
 }
 
-function handleCommand(localEcho, input) {
+function handleCommand(input) {
     if (input) {
         localEcho._history = localEcho._history || [];
         localEcho._history.push(input);
-    } else { return; }
+    } else return;
 
+    // === 内部コマンド ===
     if (input === "help") {
         localEcho.println("Available commands:");
 
@@ -75,9 +75,37 @@ function handleCommand(localEcho, input) {
             const desc = commands.commands[cmd].desc || "";
             localEcho.println(` - ${cmd} ${desc ? "— " + desc : ""}`);
         });
+        localEcho.println(" - clear — Clear the screen");
+        localEcho.println(" - history — Show command history");
+        localEcho.println(" - ls — List commands");
         return;
     }
 
+    if (input === "clear") {
+        term.reset();
+        return;
+    }
+
+    if (input === "history") {
+        localEcho.println("History:");
+        if (!localEcho._history || localEcho._history.length === 0) {
+            localEcho.println(" (empty)");
+        } else {
+            localEcho._history.forEach(h => localEcho.println(" " + h));
+        }
+        return;
+    }
+
+    if (input === "ls") {
+        localEcho.println("Commands:");
+        Object.keys(commands.commands).forEach(cmd => {
+            localEcho.println(" " + cmd);
+        });
+        localEcho.println(" help  clear  history");
+        return;
+    }
+
+    // === YAMLコマンド ===
     const cmd = commands.commands[input];
     if (!cmd) {
         localEcho.println(`Command not found: ${input}`);
