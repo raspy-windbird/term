@@ -68,6 +68,16 @@ function handleCommand(localEcho, input) {
         localEcho._history.push(input);
     } else { return; }
 
+    if (input === "help") {
+        localEcho.println("Available commands:");
+
+        Object.keys(commands.commands).forEach(cmd => {
+            const desc = commands.commands[cmd].desc || "";
+            localEcho.println(` - ${cmd} ${desc ? "— " + desc : ""}`);
+        });
+        return;
+    }
+
     const cmd = commands.commands[input];
     if (!cmd) {
         localEcho.println(`Command not found: ${input}`);
