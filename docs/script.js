@@ -4,13 +4,14 @@ import { LocalEchoAddon } from "https://cdn.jsdelivr.net/npm/@gytx/xterm-local-e
 const connectButton = document.getElementById('connectButton');
 const terminalContainer = document.getElementById('terminal');
 const testEchoButton = document.getElementById('testEchoButton');
+const ClearButton = document.getElementById('clearButton');
 
 // xterm.js
 const term = new Terminal({
     rows: 24,
     cols: 80,
     cursorBlink: false,
-    cursorStyle: 'block',
+    cursorStyle: 'bar',
     convertEol: true
 });
 
@@ -90,7 +91,6 @@ testButton.addEventListener('click', () => {
     term.write(testSequence);
 });
 
-const ClearButton = document.getElementById('clearButton');
 ClearButton.addEventListener('click', () => {
     const clearSequence = 
         // 画面クリア
