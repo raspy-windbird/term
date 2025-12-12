@@ -1,9 +1,7 @@
 commands:
   about:
-    desc: "このターミナルについて"
     output:
       - text: "This is my custom web terminal powered by xterm.js!"
   hello:
-    desc: "挨拶します"
     output:
-      - text: "Hello! Nice to meet you!"
+      - text: "Hello! N
