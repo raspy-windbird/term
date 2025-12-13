@@ -4,4 +4,4 @@ commands:
       - text: "This is my custom web terminal powered by xterm.js!"
   hello:
     output:
-      - text: "Hello! N
+      - text: "Hello!"
