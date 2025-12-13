@@ -164,7 +164,7 @@ export class TerminalApp {
             return;
         }
 
-        const output = cmd[this.yamlConfig.outputKey] || [];
+        const output = cmd[this.yamlConfig.outKey] || [];
         output.forEach(it => this.localEcho.println(it.text));
     }
 }
