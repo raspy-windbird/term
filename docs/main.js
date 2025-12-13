@@ -1,5 +1,6 @@
 import { TerminalApp } from './TerminalApp.js';
 
+window.term = null;
 document.addEventListener('DOMContentLoaded', () => {
     //ターミナルdom取得しておく
     const terminalElement = document.getElementById("terminal");
