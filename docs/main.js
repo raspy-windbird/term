@@ -7,8 +7,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (terminalElement) {
         const app = new TerminalApp(terminalElement, "commands.yaml");
         app.init();
-
-        window.term = app.term;
     } else {
         console.error("Terminal DOM not found")
     }

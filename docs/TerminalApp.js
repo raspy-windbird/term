@@ -90,6 +90,9 @@ export class TerminalApp {
 
         // 履歴対応のイベントリスナー設定
         this.term.onKey(e => this.handleKey(e));
+        if (typeof window !== 'undefined') {
+            window.term = this.term;
+        }
     }
 
     /**
