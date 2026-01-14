@@ -64,8 +64,16 @@ export class TerminalApp {
             theme: { background: '#1a1a1a' },
             cols: 80,
             rows: 24,
-            screenReaderMode: false
+            screenReaderMode: false,
+            linkHandler: null,
         });
+
+        const originalWrite = this.term.write.bind(this.term);
+        this.term.write = (data: string | Uint8Array, cb?: () => void) => {
+            originalWrite(data, cb);
+            // 書き込み直後に内部のレンダラーを強制キックする (v5特有の非公開API)
+            (this.term as any)._core._renderService.onRender.fire();
+        };
 
         // 2. ターミナルをDOMに展開（アドオンのロードなし）
         this.term.open(this.domElement);
