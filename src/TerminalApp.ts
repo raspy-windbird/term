@@ -50,33 +50,36 @@ export class TerminalApp {
             cursorBlink: true,
             lineHeight: 1.4,
             theme: { background: '#1a1a1a' },
-            screenReaderMode: false
+            screenReaderMode: false // ジャンプ防止に必須
         });
 
+        // 1. まず open する（これより前に CanvasAddon をロードしてはいけない）
+        this.term.open(this.domElement);
+
+        // 2. open した後にアドオンをロードする
         const fitAddon = new FitAddon();
         const canvasAddon = new CanvasAddon();
 
         this.term.loadAddon(fitAddon);
 
-
-        // Canvasレンダラーをロード（これが行頭戻りのチラつきを抑えます）
         try {
+            // open 後なので、今度は成功します
             this.term.loadAddon(canvasAddon);
         } catch (e) {
-            console.warn("CanvasAddon failed to load, falling back to DOM renderer", e);
+            console.error("CanvasAddon load error:", e);
         }
-        // local-echo の内部エラー（on が見つからない）を回避するためのパッチ
+
+        // 3. local-echo 用のパッチを当てる
         if (typeof (this.term as any).on !== 'function') {
             (this.term as any).on = (name: string, callback: Function) => {
                 if (name === 'data') return this.term!.onData(data => callback(data));
                 if (name === 'resize') return this.term!.onResize(size => callback(size));
-                // 必要に応じて他のイベントも追加
             };
         }
-        this.term.open(this.domElement);
+        
         fitAddon.fit();
-        window.addEventListener('resize', () => fitAddon.fit());
 
+        window.addEventListener('resize', () => fitAddon.fit());
         (window as any).term = this.term;
     }
 
