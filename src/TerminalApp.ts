@@ -3,6 +3,7 @@ import { Terminal } from 'xterm';
 import { DigitalFall } from './effects/DigitalFall';
 import { EffectConstructor } from './types/IEffect';
 import { FitAddon } from 'xterm-addon-fit';
+import { CanvasAddon } from 'xterm-addon-canvas';
 
 interface StaticCommand {
     output: string[];
@@ -48,8 +49,22 @@ export class TerminalApp {
         this.term = new Terminal({
             cursorBlink: true,
             lineHeight: 1.4,
-            theme: { background: '#1a1a1a' }
+            theme: { background: '#1a1a1a' },
+            screenReaderMode: false
         });
+
+        const fitAddon = new FitAddon();
+        const canvasAddon = new CanvasAddon();
+
+        this.term.loadAddon(fitAddon);
+
+
+        // Canvasレンダラーをロード（これが行頭戻りのチラつきを抑えます）
+        try {
+            this.term.loadAddon(canvasAddon);
+        } catch (e) {
+            console.warn("CanvasAddon failed to load, falling back to DOM renderer", e);
+        }
         // local-echo の内部エラー（on が見つからない）を回避するためのパッチ
         if (typeof (this.term as any).on !== 'function') {
             (this.term as any).on = (name: string, callback: Function) => {
@@ -58,11 +73,9 @@ export class TerminalApp {
                 // 必要に応じて他のイベントも追加
             };
         }
-
-        const fitAddon = new FitAddon();
-        this.term.loadAddon(fitAddon);
         this.term.open(this.domElement);
         fitAddon.fit();
+        window.addEventListener('resize', () => fitAddon.fit());
 
         (window as any).term = this.term;
     }
