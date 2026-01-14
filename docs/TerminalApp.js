@@ -1,45 +1,60 @@
 import { DigitalFall } from './effects/DigitalFall.js';
 
 /**
- * ターミナルのメインモジュール
+ * @typedef {Object} StaticCommand
+ * @property {string[]} output - 出力するテキストの配列
+ */
+
+/**
+ * ターミナルのメインアプリケーションクラス
+ * TS移行時は各プロパティに明示的な型を付与予定
  */
 export class TerminalApp {
-    /** コマンドとエフェクトクラスの対応表（拡張性を確保） */
+    /**
+     * エフェクトクラスのマッピング
+     * @type {Object.<string, typeof DigitalFall>}
+     */
     EFFECT_MAP = {
         'matrix': DigitalFall,
     };
 
-    /** 外部から読み込む静的コマンド定義 */
+    /**
+     * 静的コマンドの定義
+     * @type {Object.<string, StaticCommand>}
+     */
     commands = {
-        "about": { output: ["Terminal Portfolio v2.0", "Built with xterm.js & Custom Effects."] },
-        "contact": { output: ["GitHub: github.com", "Email: hello@example.com"] }
+        "about": { output: ["Terminal Portfolio v2.0", "Refactored for TypeScript migration."] },
+        "contact": { output: ["GitHub: github.com"] }
     };
 
-    term = null;
-    localEcho = null;
-
+    /**
+     * @param {HTMLElement} domElement - ターミナルを表示するDOM要素
+     */
     constructor(domElement) {
         this.domElement = domElement;
+        /** @type {any} xterm.js Terminal インスタンス */
+        this.term = null;
+        /** @type {any} local-echo インスタンス */
+        this.localEcho = null;
     }
 
     /**
-     * アプリ初期化
+     * アプリケーションの初期化
      */
     async init() {
         try {
             this.setupTerminal(this.domElement);
-            this.localEcho.println("Welcome. Type 'ls' to see available commands.");
+            // グローバル参照が必要なライブラリのための暫定処置
+            window.term = this.term;
 
-            // 非同期ループでプロンプトを待機
+            this.localEcho.println("Welcome. Type 'ls' to see available commands.");
             this.startLoop();
         } catch (e) {
             console.error(`Init Error: ${e}`);
         }
     }
 
-    /**
-     * xterm.js・local-echoのセットアップ
-     */
+    /** @private */
     setupTerminal(dom) {
         this.term = new Terminal({
             cursorBlink: true,
@@ -49,64 +64,54 @@ export class TerminalApp {
 
         this.localEcho = new LocalEchoController(this.term);
         this.term.open(dom);
-
-        // 絶対消すな
-        window.term = this.term;
     }
 
-    /**
-     * メイン入力ループ
-     */
+    /** @private */
     async startLoop() {
         while (true) {
             try {
                 const input = await this.localEcho.read("~$ ");
                 const trimmedInput = input.trim();
-
-                if (trimmedInput) {
-                    await this.handleCommand(trimmedInput);
-                }
+                if (trimmedInput) await this.handleCommand(trimmedInput);
             } catch (e) {
-                // Ctrl+C 等の割り込み対応
-                console.warn("Input cancelled", e);
+                console.warn("Input interrupted", e);
             }
         }
     }
 
     /**
-     * コマンドの解析と実行ルートの振り分け
      * @param {string} input
      */
     async handleCommand(input) {
-        // 1. アニメーションエフェクトの実行ルート
+        // 1. エフェクト実行ルート
         const EffectClass = this.EFFECT_MAP[input];
         if (EffectClass) {
-            const effect = new EffectClass(this.term, { duration: 3000 });
-            await effect.execute(); // 完了するまで await
+            // 必要に応じてここで config を上書きして渡すことが可能
+            const effect = new EffectClass(this.term, { duration: 4000 });
+            await effect.execute();
             return;
         }
 
-        // 2. 組み込みシステムコマンド
-        switch (input) {
-            case "clear":
-                this.term.clear();
-                return;
-
-            case "ls":
-                const all = [
-                    ...Object.keys(this.commands),
-                    ...Object.keys(this.EFFECT_MAP),
-                    "clear", "ls"
-                ].sort();
-                this.localEcho.println(all.join("  "));
-                return;
+        // 2. システムコマンド
+        if (input === "clear") {
+            this.term.clear();
+            return;
         }
 
-        // 3. 静的コマンド（this.commands）からの出力
+        if (input === "ls") {
+            const all = [
+                ...Object.keys(this.commands),
+                ...Object.keys(this.EFFECT_MAP),
+                "clear", "ls"
+            ].sort();
+            this.localEcho.println(all.join("  "));
+            return;
+        }
+
+        // 3. 静的コマンド
         const cmd = this.commands[input];
         if (cmd) {
-            const lines = cmd.output || [];
-            lines.forEach(line => this.localEcho.println(line));
+            cmd.output.forEach(line => this.localEcho.println(line));
         } else {
             this.localEcho.println(`command not found: ${input}`);
         }
