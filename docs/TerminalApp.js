@@ -1,170 +1,111 @@
+import { DigitalFall } from './effects/DigitalFall.js';
+
 /**
  * ターミナルのメインモジュール
- * @class
  */
 export class TerminalApp {
-    /** @type {object} YAML構造を宣言しておくやつ */
-    yamlConfig = {
-        topKey: "commands",
-        outKey: "output"
+    /** コマンドとエフェクトクラスの対応表（拡張性を確保） */
+    EFFECT_MAP = {
+        'matrix': DigitalFall,
     };
 
-    /** @type {object} 取得したyamlコマンド */
-    commands = {};
+    /** 外部から読み込む静的コマンド定義 */
+    commands = {
+        "about": { output: ["Terminal Portfolio v2.0", "Built with xterm.js & Custom Effects."] },
+        "contact": { output: ["GitHub: github.com", "Email: hello@example.com"] }
+    };
 
-    /** @type {Terminal | null} ターミナルインスタンス */
     term = null;
-
-    /** @type {LocalEchoController | null} local-echoの制御用インスタンス */
     localEcho = null;
 
-    /** @type {number} 履歴用インデックス（-1は最新のもの） */
-    historyIndex = -1;
-
-    /**
-     * ターミナルプロパティを作成
-     * @param {HTMLElement} domElement - ターミナル表示用のDOM
-     * @param {string} commandsPath - コマンド読み込み元
-     */
-    constructor(domElement, commandsPath) {
+    constructor(domElement) {
         this.domElement = domElement;
-        this.commandsPath = commandsPath;
     }
 
     /**
      * アプリ初期化
-     * @async
-     * @returns {Promise<void>}
-    **/
+     */
     async init() {
         try {
-            await this.loadCommands(this.commandsPath);
-
             this.setupTerminal(this.domElement);
+            this.localEcho.println("Welcome. Type 'ls' to see available commands.");
 
-            this.localEcho.println("Welcome to my terminal! Type 'ls' to see commands");
-            this.showPrompt();
+            // 非同期ループでプロンプトを待機
+            this.startLoop();
         } catch (e) {
-            console.error(`Init:${e}`);
-            if (this.term) {
-                this.term.writeln("Failed to build term.");
-            } else {
-                console.error("Terminal not activate.");
-            }
+            console.error(`Init Error: ${e}`);
         }
     }
 
     /**
-     * yamlを読み込んで this.commandsに格納
-     * @async
-     * @param {string} g commands.yamlへの
-     * @returns {Promise<void>}
-     */
-    async loadCommands(g) {
-        try {
-            const res = await fetch(g);
-            const text = await res.text();
-            const rawYaml = jsyaml.load(text);
-            // jsyaml ライブラリがグローバルにあることが必要
-            this.commands = rawYaml[this.yamlConfig.topKey];
-
-        } catch (e) {
-            console.error(`LoadCommands:${e}`)
-        }
-    }
-
-    /**
-     * xterm.js・local-echoのインスタンス作成→DOMに設置
-     * @param {HTMLElement} dom
-     * @returns {void}
+     * xterm.js・local-echoのセットアップ
      */
     setupTerminal(dom) {
         this.term = new Terminal({
             cursorBlink: true,
             lineHeight: 1.4,
+            theme: { background: '#1a1a1a' }
         });
+
         this.localEcho = new LocalEchoController(this.term);
         this.term.open(dom);
-        // 履歴管理の初期化
-        this.localEcho._history = [];
+    }
 
-        // 履歴対応のイベントリスナー設定
-        this.term.onKey(e => this.handleKey(e));
-        if (typeof window !== 'undefined') {
-            window.term = this.term;
+    /**
+     * メイン入力ループ
+     */
+    async startLoop() {
+        while (true) {
+            try {
+                const input = await this.localEcho.read("~$ ");
+                const trimmedInput = input.trim();
+
+                if (trimmedInput) {
+                    await this.handleCommand(trimmedInput);
+                }
+            } catch (e) {
+                // Ctrl+C 等の割り込み対応
+                console.warn("Input cancelled", e);
+            }
         }
     }
 
     /**
-     * historyコマンドの動作制御
-     * @param {KeyboardEvent} e イベント
-     * @returns {void}
-     */
-    handleKey(e) {
-        const ev = e.domEvent;
-
-        if (ev.key === "ArrowUp") {
-            if (this.localEcho._history.length > 0) {
-                if (this.historyIndex === -1) this.historyIndex = this.localEcho._history.length - 1;
-                else if (this.historyIndex > 0) this.historyIndex--;
-                this.localEcho.setInput(this.localEcho._history[this.historyIndex]);
-            }
-            ev.preventDefault();
-        } else if (ev.key === "ArrowDown") {
-            if (this.localEcho._history.length > 0) {
-                if (this.historyIndex < this.localEcho._history.length - 1) this.historyIndex++;
-                else this.historyIndex = -1;
-
-                this.localEcho.setInput(this.historyIndex === -1 ? "" : this.localEcho._history[this.historyIndex]);
-            }
-            ev.preventDefault();
-        }
-    }
-
-    /**
-     * プロンプト表示して待機
-     * @returns {void}
-     */
-    showPrompt() {
-        this.historyIndex = -1;
-        // Promiseチェーンでプロンプトを再帰的に表示
-        this.localEcho.read("~$ ")
-            .then(input => this.handleCommand(input.trim()))
-            .then(() => this.showPrompt()) // コマンド処理後に次のプロンプトを表示
-            .catch(() => this.showPrompt());
-    }
-
-    /**
-     * 入力されたコマンド処理して出力
+     * コマンドの解析と実行ルートの振り分け
      * @param {string} input
-     * @returns {void}
      */
-    handleCommand(input) {
-        if (!input) return;
-        this.localEcho._history.push(input);
-
-        // 組み込みはここに
-        switch (input) {
-            case "clear":
-                this.term.reset();
-                return;
-
-            case "ls":
-                const all = [...Object.keys(this.commands), "clear", "ls"];
-                all.sort();
-                const ls_msg = "Commands:\r\n" + all.map(c => " " + c).join("\r\n") + "\r\n";
-                this.term.write(ls_msg);
-                return;
-        }
-
-        // yamlから
-        const cmd = this.commands[input];
-        if (!cmd) {
-            this.localEcho.println(`Command not found: ${input}`);
+    async handleCommand(input) {
+        // 1. アニメーションエフェクトの実行ルート
+        const EffectClass = this.EFFECT_MAP[input];
+        if (EffectClass) {
+            const effect = new EffectClass(this.term, { duration: 3000 });
+            await effect.execute(); // 完了するまで await
             return;
         }
 
-        const output = cmd[this.yamlConfig.outKey] || [];
-        output.forEach(it => this.localEcho.println(it.text));
+        // 2. 組み込みシステムコマンド
+        switch (input) {
+            case "clear":
+                this.term.clear();
+                return;
+
+            case "ls":
+                const all = [
+                    ...Object.keys(this.commands),
+                    ...Object.keys(this.EFFECT_MAP),
+                    "clear", "ls"
+                ].sort();
+                this.localEcho.println(all.join("  "));
+                return;
+        }
+
+        // 3. 静的コマンド（this.commands）からの出力
+        const cmd = this.commands[input];
+        if (cmd) {
+            const lines = cmd.output || [];
+            lines.forEach(line => this.localEcho.println(line));
+        } else {
+            this.localEcho.println(`command not found: ${input}`);
+        }
     }
 }

@@ -1,0 +1,74 @@
+import { Utils as UTILS } from './Utils.js';
+
+export class DigitalFallEffect {
+    /**
+     * @param {Terminal} term - xterm.js インスタンス
+     * @param {object} options - 期間(ms)や行数
+     */
+    constructor(term, options = {}) {
+        this.term = term;
+        this.duration = options.duration || 3000; // 3秒
+        this.rowCount = options.rowCount || 10;   // 10行分を使用
+        this.characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$+-*/=%\"'#&_(),.;:?!\\|{}<>[]";
+    }
+
+    /**
+     * エフェクトを実行
+     * @returns {Promise<void>}
+     */
+    async execute() {
+        this.term.write(UTILS.HIDE_CURSOR);
+
+        // 描画領域を確保（空の改行を事前に入れる）
+        for (let i = 0; i < this.rowCount; i++) this.term.writeln('');
+
+        const startTime = Date.now();
+
+        return new Promise((resolve) => {
+            const timer = setInterval(() => {
+                const elapsed = Date.now() - startTime;
+
+                if (elapsed > this.duration) {
+                    clearInterval(timer);
+                    this.term.write(UTILS.SHOW_CURSOR);
+                    resolve();
+                } else {
+                    this.renderFrame();
+                }
+            }, 80); // 約12fps
+        });
+    }
+
+    /**
+     * 1フレームの描画処理
+     */
+    renderFrame() {
+        // 一番下から上に戻って描画
+        this.term.write(UTILS.GET_UP(this.rowCount));
+
+        for (let i = 0; i < this.rowCount; i++) {
+            this.term.write(UTILS.CLEAR_LINE);
+            const line = this.createFrameLine();
+            this.term.writeln(line);
+        }
+    }
+
+    /**
+     * マトリックス風の1行を生成
+     */
+    createFrameLine() {
+        const width = this.term.cols || 80;
+        let line = "";
+        for (let i = 0; i < width; i++) {
+            // 15%の確率で文字を表示、それ以外は空白（まばらな滝を作る）
+            if (Math.random() > 0.85) {
+                const char = this.characters[UTILS.RANDOM(0, this.characters.length - 1)];
+                const color = Math.random() > 0.8 ? UTILS.COLOR.BRIGHT_GREEN : UTILS.COLOR.GREEN;
+                line += `${color}${char}${UTILS.COLOR.RESET}`;
+            } else {
+                line += " ";
+            }
+        }
+        return line;
+    }
+}
