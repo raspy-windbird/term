@@ -37,7 +37,7 @@ export class TerminalApp {
             // 2. DOMにマウント
             this.term.open(this.domElement);
 
-            // 3. 【新】パッチ処理をその場で行う (applyLegacyPatchを呼ばない)
+            // 3. パッチ処理を直列で実行
             if (typeof (this.term as any).on !== 'function') {
                 (this.term as any).on = (name: string, callback: Function) => {
                     if (name === 'data') return this.term!.onData(data => callback(data));
@@ -45,24 +45,29 @@ export class TerminalApp {
                 };
             }
 
-            // 4. 【新・解決策】xterm.jsの「書き込み可能」を待ってからアドオンをロード
-            // これにより 'colors' 未定義エラーを物理的に回避します
-            await new Promise(r => setTimeout(r, 50));
+            // 4. 【重要】xterm.jsの内部状態（colors）が安定するのを待つ
+            // これを入れないと CanvasAddon が "reading colors" で落ちます
+            await new Promise(r => setTimeout(r, 100));
 
+            // 5. 【重要】local-echoが内部で使うグローバル変数をここでセット
+            // これを入れないと文字入力時に ReferenceError になります
+            (window as any).term = this.term;
+
+            // 6. アドオンのロード
             const fit = new FitAddon();
             const canvas = new CanvasAddon();
-
             this.term.loadAddon(fit);
             try {
                 this.term.loadAddon(canvas);
             } catch (e) {
-                console.warn("CanvasAddon error (fallback to DOM):", e);
+                console.warn("CanvasAddon failed, using DOM renderer:", e);
             }
 
+            // 7. レイアウト確定
             fit.fit();
             window.onresize = () => fit.fit();
 
-            // 5. 全てが整った後に LocalEcho を作成
+            // 8. 最後に LocalEcho を作成して開始
             this.localEcho = new LocalEchoController(this.term);
             this.localEcho.println("System online. Type 'ls' to start.");
 
