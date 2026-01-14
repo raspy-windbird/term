@@ -1,6 +1,6 @@
 import { Utils as UTILS } from './Utils.js';
 
-export class DigitalFallEffect {
+export class DigitalFall {
     /**
      * @param {Terminal} term - xterm.js インスタンス
      * @param {object} options - 期間(ms)や行数
