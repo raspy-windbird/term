@@ -49,6 +49,9 @@ export class TerminalApp {
 
         this.localEcho = new LocalEchoController(this.term);
         this.term.open(dom);
+
+        // 絶対消すな
+        window.term = this.term;
     }
 
     /**
