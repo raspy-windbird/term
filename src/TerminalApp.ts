@@ -2,6 +2,7 @@
 import { Terminal } from 'xterm';
 import { DigitalFall } from './effects/DigitalFall';
 import { EffectConstructor } from './types/IEffect';
+import { FitAddon } from 'xterm-addon-fit';
 
 interface StaticCommand {
     output: string[];
@@ -51,7 +52,12 @@ export class TerminalApp {
                 // 必要に応じて他のイベントも追加
             };
         }
+
+        const fitAddon = new FitAddon();
+        this.term.loadAddon(fitAddon);
         this.term.open(this.domElement);
+        fitAddon.fit();
+
         (window as any).term = this.term;
     }
 
