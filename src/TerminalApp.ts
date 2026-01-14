@@ -18,7 +18,7 @@ export class TerminalApp {
     };
 
     private term: Terminal | null = null;
-    private localEcho: LocalEchoController | null = null;
+    private localEcho: InstanceType<typeof LocalEchoController> | null = null;
 
     constructor(private domElement: HTMLElement) { }
 
