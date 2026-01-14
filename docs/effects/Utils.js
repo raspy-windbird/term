@@ -15,11 +15,13 @@ export const UTILS = {
     /** @type {string} 現在の行をクリアして行頭に戻る */
     CLEAR_LINE: '\x1b[2K\r',
 
-    /**
-     * 指定した行数分、カーソルを上に移動させる
-     * @param {number} n - 移動する行数
-     * @returns {string}
-     */
+    /** @type {string} オルタネートバッファ（別画面）へ切り替え */
+    ENTER_ALT_SCREEN: '\x1b[?1049h',
+    /** @type {string} 通常バッファ（元の画面）へ戻る */
+    EXIT_ALT_SCREEN: '\x1b[?1049l',
+    /** @type {string} 画面全体の消去とカーソルホーム移動 */
+    CLEAR_SCREEN: '\x1b[2J\x1b[H',
+
     GET_UP: (n) => `\x1b[${n}A`,
 
     /**
