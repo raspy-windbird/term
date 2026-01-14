@@ -46,42 +46,45 @@ export class TerminalApp {
     }
 
     private setupTerminal(): void {
+        // 1. インスタンスの作成（設定のみ）
         this.term = new Terminal({
             cursorBlink: true,
             lineHeight: 1.4,
             theme: { background: '#1a1a1a' },
-            screenReaderMode: false // ジャンプ防止に必須
+            screenReaderMode: false
         });
 
-        // 1. まず open する（これより前に CanvasAddon をロードしてはいけない）
+        // 2. 【最重要】まず最初に open して実体化させる
         this.term.open(this.domElement);
 
-        // 2. open した後にアドオンをロードする
+        // 3. 実体化した「後」でアドオンをロードする
         const fitAddon = new FitAddon();
         const canvasAddon = new CanvasAddon();
 
         this.term.loadAddon(fitAddon);
 
+        // ここで実行すれば、上記のエラーは構造的に発生しなくなります
         try {
-            // open 後なので、今度は成功します
             this.term.loadAddon(canvasAddon);
         } catch (e) {
-            console.error("CanvasAddon load error:", e);
+            console.error("CanvasAddon error:", e);
         }
 
-        // 3. local-echo 用のパッチを当てる
+        // 4. local-echo 用のパッチ（openの後であれば安全）
         if (typeof (this.term as any).on !== 'function') {
             (this.term as any).on = (name: string, callback: Function) => {
                 if (name === 'data') return this.term!.onData(data => callback(data));
                 if (name === 'resize') return this.term!.onResize(size => callback(size));
             };
         }
-        
+
+        // 5. 最後にサイズを確定させる
         fitAddon.fit();
 
         window.addEventListener('resize', () => fitAddon.fit());
         (window as any).term = this.term;
     }
+
 
     private async startLoop(): Promise<void> {
         if (!this.localEcho) return;
