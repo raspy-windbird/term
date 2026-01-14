@@ -25,12 +25,18 @@ export class TerminalApp {
 
     public async init(): Promise<void> {
         try {
+            // 1. ターミナルの準備とサイズ確定 (fit) を先に行う
             this.setupTerminal();
 
+            // 2. DOMに反映されるまで僅かに待機（ブラウザの計算時間を待つ）
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            // 3. サイズが確定したターミナルに対して、LocalEchoを作成する
             if (this.term) {
-                // global.d.ts により LocalEchoController が認識される
                 this.localEcho = new LocalEchoController(this.term);
                 this.localEcho.println("Welcome. Type 'ls' to see available commands.");
+
+                // 入力ループ開始
                 this.startLoop();
             }
         } catch (e) {
