@@ -2,8 +2,6 @@
 import { Terminal } from 'xterm';
 import { DigitalFall } from './effects/DigitalFall';
 import { EffectConstructor } from './types/IEffect';
-import { FitAddon } from 'xterm-addon-fit';
-import { CanvasAddon } from 'xterm-addon-canvas';
 
 interface StaticCommand {
     output: string[];
@@ -22,61 +20,58 @@ export class TerminalApp {
     private term: Terminal | null = null;
     private localEcho: InstanceType<typeof LocalEchoController> | null = null;
 
-    constructor(private domElement: HTMLElement) { }
+    constructor(private domElement: HTMLElement) {}
 
+    /**
+ * アプリケーションの初期化
+ * 順序を直列（シンプル）に戻し、余計な待機を排除します
+ */
     public async init(): Promise<void> {
         try {
-            // 1. インスタンス作成
-            this.term = new Terminal({
-                cursorBlink: true,
-                lineHeight: 1.4,
-                theme: { background: '#1a1a1a' },
-                screenReaderMode: false,
-                scrollback: 0,
-            });
+            // 1. ターミナルの基本セットアップを実行
+            this.setupTerminal();
 
-            // 2. DOMにマウント
-            this.term.open(this.domElement);
+            if (this.term) {
+                // 2. local-echo が内部で参照するグローバル変数を即座にセット
+                (window as any).term = this.term;
 
-            if (typeof (this.term as any).on !== 'function') {
-                (this.term as any).on = (name: string, callback: Function) => {
-                    // 'data' イベントを直接 term.onData に結びつけ、
-                    // かつ余計な内部処理を介さないようにする
-                    if (name === 'data') return this.term!.onData(e => callback(e));
-                    if (name === 'resize') return this.term!.onResize(e => callback(e));
-                };
+                // 3. LocalEcho インスタンスを作成
+                this.localEcho = new LocalEchoController(this.term);
+                this.localEcho.println("Welcome. Type 'ls' to see available commands.");
+
+                // 4. 入力ループ開始
+                this.startLoop();
             }
-
-            // 4. 【重要】xterm.jsの内部状態（colors）が安定するのを待つ
-            // これを入れないと CanvasAddon が "reading colors" で落ちます
-            await new Promise(r => setTimeout(r, 100));
-
-            // 5. 【重要】local-echoが内部で使うグローバル変数をここでセット
-            // これを入れないと文字入力時に ReferenceError になります
-            (window as any).term = this.term;
-
-            // 6. アドオンのロード
-            const fit = new FitAddon();
-            const canvas = new CanvasAddon();
-            this.term.loadAddon(fit);
-            try {
-                this.term.loadAddon(canvas);
-            } catch (e) {
-                console.warn("CanvasAddon failed, using DOM renderer:", e);
-            }
-
-            // 7. レイアウト確定
-            fit.fit();
-            window.onresize = () => fit.fit();
-
-            // 8. 最後に LocalEcho を作成して開始
-            this.localEcho = new LocalEchoController(this.term);
-            this.localEcho.println("System online. Type 'ls' to start.");
-
-            this.startLoop();
-
         } catch (e) {
             console.error(`Init Error: ${e}`);
+        }
+    }
+
+    /**
+     * ターミナルのセットアップ
+     * アドオンをすべて排除し、初期のJS版に近い「標準DOM描画」に戻します
+     */
+    private setupTerminal(): void {
+        // 1. アドオンなしの純粋なインスタンス生成
+        // cols, rows を明示的に指定してサイズ計算のズレを抑止します
+        this.term = new Terminal({
+            cursorBlink: true,
+            lineHeight: 1.4,
+            theme: { background: '#1a1a1a' },
+            cols: 80,
+            rows: 24,
+            screenReaderMode: false
+        });
+
+        // 2. ターミナルをDOMに展開（アドオンのロードなし）
+        this.term.open(this.domElement);
+
+        // 3. local-echo.js が内部で .on('data') を呼べるようにする最小限のパッチ
+        if (typeof (this.term as any).on !== 'function') {
+            (this.term as any).on = (name: string, callback: Function) => {
+                if (name === 'data') return this.term!.onData(data => callback(data));
+                if (name === 'resize') return this.term!.onResize(size => callback(size));
+            };
         }
     }
 
