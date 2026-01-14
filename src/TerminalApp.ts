@@ -31,17 +31,19 @@ export class TerminalApp {
                 cursorBlink: true,
                 lineHeight: 1.4,
                 theme: { background: '#1a1a1a' },
-                screenReaderMode: false
+                screenReaderMode: false,
+                scrollback: 0,
             });
 
             // 2. DOMにマウント
             this.term.open(this.domElement);
 
-            // 3. パッチ処理を直列で実行
             if (typeof (this.term as any).on !== 'function') {
                 (this.term as any).on = (name: string, callback: Function) => {
-                    if (name === 'data') return this.term!.onData(data => callback(data));
-                    if (name === 'resize') return this.term!.onResize(size => callback(size));
+                    // 'data' イベントを直接 term.onData に結びつけ、
+                    // かつ余計な内部処理を介さないようにする
+                    if (name === 'data') return this.term!.onData(e => callback(e));
+                    if (name === 'resize') return this.term!.onResize(e => callback(e));
                 };
             }
 
