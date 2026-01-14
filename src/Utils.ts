@@ -22,7 +22,7 @@ export const UTILS = {
     /** @type {string} 画面全体の消去とカーソルホーム移動 */
     CLEAR_SCREEN: '\x1b[2J\x1b[H',
 
-    GET_UP: (n) => `\x1b[${n}A`,
+    GET_UP: (n:number):string => `\x1b[${n}A`,
 
     /**
      * ANSIカラー
@@ -46,5 +46,5 @@ export const UTILS = {
      * @param {number} max
      * @returns {number}
      */
-    RANDOM: (min, max) => Math.floor(Math.random() * (max - min + 1) + min)
+    RANDOM: (min:number, max:number):number => Math.floor(Math.random() * (max - min + 1) + min)
 };
