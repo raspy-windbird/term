@@ -2,28 +2,27 @@ import { defineConfig } from 'vite';
 import path from 'path';
 
 export default defineConfig({
+    // ルートはプロジェクト直下にする
     root: './',
     base: './',
     resolve: {
-        alias: { '@': path.resolve(__dirname, './src') },
+        alias: {
+            '@': path.resolve(__dirname, './src'),
+        },
     },
     build: {
+        // 出力先を docs に固定（GitHub Pages用）
         outDir: 'docs',
-        // 一度 docs を空にする（index.html は input に指定されているので再生成されます）
-        emptyOutDir: true,
+        emptyOutDir: true, // docsの中身をきれいに掃除してから書き出す
         rollupOptions: {
             input: {
-                // docs/index.html を起点にする
-                main: path.resolve(__dirname, 'docs/index.html'),
+                // ルートに移動した index.html を指定
+                main: path.resolve(__dirname, 'index.html'),
             },
         },
     },
     server: {
-        host: true, // 0.0.0.0 で待機
+        host: true,
         port: 5173,
-        allowedHosts: [
-            '.github.dev',
-            '.app.github.dev'
-        ]
     }
 });
