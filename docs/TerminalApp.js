@@ -1,6 +1,6 @@
 /**
  * ターミナルのメインモジュール
- * @module
+ * @class
  */
 export class TerminalApp {
     /** @type {object} YAML構造を宣言しておくやつ */
