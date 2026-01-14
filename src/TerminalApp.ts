@@ -26,64 +26,52 @@ export class TerminalApp {
 
     public async init(): Promise<void> {
         try {
-            // 1. ターミナルの準備とサイズ確定 (fit) を先に行う
-            this.setupTerminal();
+            // 1. インスタンス作成
+            this.term = new Terminal({
+                cursorBlink: true,
+                lineHeight: 1.4,
+                theme: { background: '#1a1a1a' },
+                screenReaderMode: false
+            });
 
-            // 2. DOMに反映されるまで僅かに待機（ブラウザの計算時間を待つ）
-            await new Promise(resolve => setTimeout(resolve, 50));
+            // 2. DOMにマウント
+            this.term.open(this.domElement);
 
-            // 3. サイズが確定したターミナルに対して、LocalEchoを作成する
-            if (this.term) {
-                this.localEcho = new LocalEchoController(this.term);
-                this.localEcho.println("Welcome. Type 'ls' to see available commands.");
-
-                // 入力ループ開始
-                this.startLoop();
+            // 3. 【新】パッチ処理をその場で行う (applyLegacyPatchを呼ばない)
+            if (typeof (this.term as any).on !== 'function') {
+                (this.term as any).on = (name: string, callback: Function) => {
+                    if (name === 'data') return this.term!.onData(data => callback(data));
+                    if (name === 'resize') return this.term!.onResize(size => callback(size));
+                };
             }
+
+            // 4. 【新・解決策】xterm.jsの「書き込み可能」を待ってからアドオンをロード
+            // これにより 'colors' 未定義エラーを物理的に回避します
+            await new Promise(r => setTimeout(r, 50));
+
+            const fit = new FitAddon();
+            const canvas = new CanvasAddon();
+
+            this.term.loadAddon(fit);
+            try {
+                this.term.loadAddon(canvas);
+            } catch (e) {
+                console.warn("CanvasAddon error (fallback to DOM):", e);
+            }
+
+            fit.fit();
+            window.onresize = () => fit.fit();
+
+            // 5. 全てが整った後に LocalEcho を作成
+            this.localEcho = new LocalEchoController(this.term);
+            this.localEcho.println("System online. Type 'ls' to start.");
+
+            this.startLoop();
+
         } catch (e) {
             console.error(`Init Error: ${e}`);
         }
     }
-
-    private setupTerminal(): void {
-        this.term = new Terminal({
-            cursorBlink: true,
-            lineHeight: 1.4,
-            theme: { background: '#1a1a1a' },
-            screenReaderMode: false
-        });
-
-        // 1. まず open する
-        this.term.open(this.domElement);
-
-        // 2. setTimeout を使い、内部の 'colors' 生成が確実に終わるのを待つ
-        setTimeout(() => {
-            if (!this.term) return;
-
-            const fitAddon = new FitAddon();
-            const canvasAddon = new CanvasAddon();
-
-            this.term.loadAddon(fitAddon);
-
-            try {
-                // ここでロードすれば colors 未定義エラーは解消されます
-                this.term.loadAddon(canvasAddon);
-            } catch (e) {
-                console.warn("CanvasAddon fallback:", e);
-            }
-
-            // サイズ確定
-            fitAddon.fit();
-
-            // window.onresize などの設定もここで行う
-            window.onresize = () => fitAddon.fit();
-        }, 0);
-
-        // パッチ処理は同期的に行っても問題ありません
-        // @ts-ignore
-        this.applyLegacyPatch();
-    }
-
 
     private async startLoop(): Promise<void> {
         if (!this.localEcho) return;
