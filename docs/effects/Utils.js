@@ -14,7 +14,9 @@ export const Utils = {
     COLOR: {
         GREEN: '\x1b[32m',
         BRIGHT_GREEN: '\x1b[92m',
-        RESET: '\x1b[0m'
+        DARK_GREEN: '\x1b[38;5;22m',
+        RED: '\x1b[31m',
+        RESET: '\x1b[0m',
     },
 
     // 指定範囲のランダムな整数

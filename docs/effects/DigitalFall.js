@@ -8,8 +8,10 @@ export class DigitalFall {
     constructor(term, options = {}) {
         this.term = term;
         this.duration = options.duration || 3000; // 3秒
-        this.rowCount = options.rowCount || 10;   // 10行分を使用
-        this.characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$+-*/=%\"'#&_(),.;:?!\\|{}<>[]";
+        this.rowCount = options.rowCount || 5;   // 10行分を使用
+
+        this.keywords = ["infinity", "github"];
+        this.errorMark = "ERROR";
     }
 
     /**
@@ -71,19 +73,39 @@ export class DigitalFall {
     }
 
     /**
-     * マトリックス風の1行を生成
+     * バイナリ・ストリーム行の生成
      */
     createFrameLine() {
         const width = this.term.cols || 80;
         let line = "";
-        for (let i = 0; i < width; i++) {
-            // 15%の確率で文字を表示、それ以外は空白（まばらな滝を作る）
-            if (Math.random() > 0.85) {
-                const char = this.characters[UTILS.RANDOM(0, this.characters.length - 1)];
-                const color = Math.random() > 0.8 ? UTILS.COLOR.BRIGHT_GREEN : UTILS.COLOR.GREEN;
-                line += `${color}${char}${UTILS.COLOR.RESET}`;
-            } else {
+        let i = 0;
+
+        while (i < width) {
+            const rand = Math.random();
+
+            //　0.5%でキーワード
+            if (rand < 0.005) {
+                const word = this.keywords[UTILS.RANDOM(0, this.keywords.length - 1)];
+                line += `${UTILS.COLOR.BRIGHT_GREEN}${word}${UTILS.COLOR.RESET}`;
+                i += word.length;
+            }
+            //  0.3%でERROR
+            else if (rand < 0.008) {
+                line += `${UTILS.COLOR.RED}${this.errorMark}${UTILS.COLOR.RESET}`;
+                i += this.errorMark.length;
+            }
+            //  15%でバイナリ
+            else if (rand < 0.15) {
+                const bit = Math.random() > 0.5 ? "1" : "0";
+                // 1:明 0:暗　色分け
+                const color = bit === "1" ? UTILS.COLOR.GREEN : UTILS.COLOR.DARK_GREEN;
+                line += `${color}${bit}${UTILS.COLOR.RESET}`;
+                i++;
+            }
+            // 空白
+            else {
                 line += " ";
+                i++;
             }
         }
         return line;
