@@ -81,7 +81,7 @@ export class TerminalApp {
         // 5. 最後にサイズを確定させる
         fitAddon.fit();
 
-        window.addEventListener('resize', () => fitAddon.fit());
+        window.onresize = () => fitAddon.fit();
         (window as any).term = this.term;
     }
 
