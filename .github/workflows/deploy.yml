@@ -30,7 +30,7 @@ jobs:
       #   run: npx eslint .
 
       - name: Type check
-        run: npx tsc --noEmit
+        run: npx tsc --noEmit -p .
 
       - name: Build
         run: npm run build
