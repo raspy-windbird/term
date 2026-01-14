@@ -28,18 +28,22 @@ export class TerminalApp {
  */
     public async init(): Promise<void> {
         try {
-            // 1. ターミナルの基本セットアップを実行
             this.setupTerminal();
 
+            // 1. 【重要】ブラウザにDOMの幅計算（レンダリング）を完了させるための十分な待ち時間
+            // 2026年現在のブラウザの安定性を考慮し、100ms 待ちます
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             if (this.term) {
-                // 2. local-echo が内部で参照するグローバル変数を即座にセット
+                // 2. 【重要】local-echo を作る「直前」に、強制的にサイズをセット
+                // これにより local-echo が「幅0」と勘違いするのを防ぎます
+                this.term.resize(80, 24);
+
                 (window as any).term = this.term;
 
-                // 3. LocalEcho インスタンスを作成
+                // 3. サイズが確定(80列)した状態で作成
                 this.localEcho = new LocalEchoController(this.term);
-                this.localEcho.println("Welcome. Type 'ls' to see available commands.");
-
-                // 4. 入力ループ開始
+                this.localEcho.println("System online. Ready.");
                 this.startLoop();
             }
         } catch (e) {
@@ -65,14 +69,6 @@ export class TerminalApp {
 
         // 2. ターミナルをDOMに展開（アドオンのロードなし）
         this.term.open(this.domElement);
-
-        // 3. local-echo.js が内部で .on('data') を呼べるようにする最小限のパッチ
-        if (typeof (this.term as any).on !== 'function') {
-            (this.term as any).on = (name: string, callback: Function) => {
-                if (name === 'data') return this.term!.onData(data => callback(data));
-                if (name === 'resize') return this.term!.onResize(size => callback(size));
-            };
-        }
     }
 
     private async startLoop(): Promise<void> {
