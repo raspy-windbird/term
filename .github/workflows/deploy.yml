@@ -1,0 +1,53 @@
+name: Lint and Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ effect ] # 作業中のブランチ名に合わせる
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: uses/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # ESLint設定がない場合は一旦コメントアウトするか、設定を追加してください
+      # - name: Lint check
+      #   run: npx eslint .
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # 重要: vite.config.ts の outDir と一致させる
+          path: './docs'
+
+  deploy:
+    needs: check-and-build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
