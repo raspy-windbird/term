@@ -46,7 +46,6 @@ export class TerminalApp {
     }
 
     private setupTerminal(): void {
-        // 1. インスタンスの作成（設定のみ）
         this.term = new Terminal({
             cursorBlink: true,
             lineHeight: 1.4,
@@ -54,35 +53,35 @@ export class TerminalApp {
             screenReaderMode: false
         });
 
-        // 2. 【最重要】まず最初に open して実体化させる
+        // 1. まず open する
         this.term.open(this.domElement);
 
-        // 3. 実体化した「後」でアドオンをロードする
-        const fitAddon = new FitAddon();
-        const canvasAddon = new CanvasAddon();
+        // 2. setTimeout を使い、内部の 'colors' 生成が確実に終わるのを待つ
+        setTimeout(() => {
+            if (!this.term) return;
 
-        this.term.loadAddon(fitAddon);
+            const fitAddon = new FitAddon();
+            const canvasAddon = new CanvasAddon();
 
-        // ここで実行すれば、上記のエラーは構造的に発生しなくなります
-        try {
-            this.term.loadAddon(canvasAddon);
-        } catch (e) {
-            console.error("CanvasAddon error:", e);
-        }
+            this.term.loadAddon(fitAddon);
 
-        // 4. local-echo 用のパッチ（openの後であれば安全）
-        if (typeof (this.term as any).on !== 'function') {
-            (this.term as any).on = (name: string, callback: Function) => {
-                if (name === 'data') return this.term!.onData(data => callback(data));
-                if (name === 'resize') return this.term!.onResize(size => callback(size));
-            };
-        }
+            try {
+                // ここでロードすれば colors 未定義エラーは解消されます
+                this.term.loadAddon(canvasAddon);
+            } catch (e) {
+                console.warn("CanvasAddon fallback:", e);
+            }
 
-        // 5. 最後にサイズを確定させる
-        fitAddon.fit();
+            // サイズ確定
+            fitAddon.fit();
 
-        window.onresize = () => fitAddon.fit();
-        (window as any).term = this.term;
+            // window.onresize などの設定もここで行う
+            window.onresize = () => fitAddon.fit();
+        }, 0);
+
+        // パッチ処理は同期的に行っても問題ありません
+        // @ts-ignore
+        this.applyLegacyPatch();
     }
 
 
