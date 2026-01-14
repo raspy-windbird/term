@@ -13,13 +13,13 @@ export class DigitalFall {
     }
 
     /**
-     * エフェクトを実行
+     * エフェクトを実行　約12fps
      * @returns {Promise<void>}
      */
     async execute() {
         this.term.write(UTILS.HIDE_CURSOR);
 
-        // 描画領域を確保（空の改行を事前に入れる）
+        // 描画領域を確保
         for (let i = 0; i < this.rowCount; i++) this.term.writeln('');
 
         const startTime = Date.now();
@@ -30,12 +30,29 @@ export class DigitalFall {
 
                 if (elapsed > this.duration) {
                     clearInterval(timer);
+                    this.term.write(UTILS.GET_UP(this.rowCount));
+
+                    // 全行をクリアする
+                    for (let i = 0; i < this.rowCount; i++) {
+                        this.term.write(UTILS.CLEAR_LINE);
+                        // 次の行のクリアへ進む
+                        if (i < this.rowCount - 1) this.term.write('\n');
+                    }
+
+                    // 領域の先頭まで戻る
+                    this.term.write(UTILS.GET_UP(this.rowCount - 1));
+
+                    // [Complete] メッセージ
+                    const completeMsg = `${UTILS.COLOR.BRIGHT_GREEN}[Complete]${UTILS.COLOR.RESET} System analysis stream finished.`;
+                    this.term.writeln(completeMsg);
+                    // --- クリーンアップ終了 ---
+
                     this.term.write(UTILS.SHOW_CURSOR);
                     resolve();
                 } else {
                     this.renderFrame();
                 }
-            }, 80); // 約12fps
+            }, 80);
         });
     }
 
