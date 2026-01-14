@@ -1,4 +1,4 @@
-import { DigitalFall } from './effects/DigitalFall';
+import { DigitalFall } from './effects/DigitalFall.js';
 
 /**
  * ターミナルのメインモジュール
