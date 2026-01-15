@@ -11,19 +11,10 @@ const startApp = () => {
     const terminalElement = document.getElementById("terminal");
 
     if (terminalElement) {
-        // 1. 既存の描画内容をクリアし、古いインスタンスの干渉を防ぐ
-        terminalElement.innerHTML = '';
-
-        // 2. 新しいインスタンスを生成
-        appInstance = new TerminalApp(terminalElement);
-
-        appInstance.init().catch(err => {
-            console.error("Terminal initialization failed:", err);
-        });
-    } else {
-        console.error("Terminal DOM not found");
+        const app = new TerminalApp(terminalElement);
+        app.init();
     }
-};
+}
 
 // 初回起動
 startApp();

@@ -2,7 +2,7 @@ name: Lint and Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ effect ]
+    branches: [ readline] 
 
 permissions:
   contents: read
