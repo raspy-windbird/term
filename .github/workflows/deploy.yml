@@ -1,0 +1,49 @@
+name: Lint and Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ readline] 
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        # npm ci の代わりに --legacy-peer-deps を付けた install を使用
+        run: npm install --legacy-peer-deps
+
+      - name: Type check
+        run: npx tsc --noEmit -p .
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './docs'
+
+  deploy:
+    needs: check-and-build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
